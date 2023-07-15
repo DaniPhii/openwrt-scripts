@@ -1,12 +1,8 @@
 #!/bin/ash
 
-# Display message for updating the lists of available packages
+# Update package lists silently
 echo "Updating lists of available packages..."
-
-# Update package lists
 opkg update -V0
-
-# Display completion message
 echo -e "Done.\n"
 
 # Obtain the IP address of the remote client connected via SSH
@@ -47,12 +43,12 @@ fi
 # Sort the upgradable packages alphabetically
 upgradable_pkgs=$(echo $upgradable_pkgs | tr ' ' '\n' | sort)
 
-# Check if there are excluded packages
+# Check if there are excluded packages and inform the user
 if [[ -n "$excluded_pkgs" ]]; then
   echo -e "The following packages are upgradable, but will be excluded:\n"$excluded_pkgs"\n"
 fi
 
-# Check if there are no upgradable packages
+# Check if there are no upgradable packages and exit with no errors
 if [[ -z "$upgradable_pkgs" ]]; then
   echo -e "No packages are upgradable at the moment.\n"
   exit 0
@@ -65,7 +61,9 @@ else
     read -p "Do you want to upgrade them? (y/N) " choice
     case $choice in
       [Yy]* ) echo -e "\nStarting upgrade..."
-              # Upgrade the packages using opkg
+              # Upgrade the packages one by one to prevent the full upgrade from failing
+              # in case the Internet connection flaps for a moment while downloading one
+              # of the packages
               echo "$upgradable_pkgs" | xargs -n 1 opkg upgrade -V1
               echo -e "\nFinished."
               exit 0
